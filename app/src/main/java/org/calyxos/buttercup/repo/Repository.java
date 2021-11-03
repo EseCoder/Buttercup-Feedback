@@ -3,7 +3,6 @@ package org.calyxos.buttercup.repo;
 import android.util.Log;
 
 import org.calyxos.buttercup.Constants;
-import org.calyxos.buttercup.model.Image;
 import org.calyxos.buttercup.model.Ticket;
 import org.calyxos.buttercup.model.compat.ArticleAttachmentCompat;
 import org.calyxos.buttercup.model.compat.TicketArticleCompat;
@@ -40,16 +39,12 @@ public class Repository {
         webServices = retrofit.create(WebServices.class);
     }
 
-    public void submitFeedback(String subject, String body, List<Image> fileList, RequestListener listener) {
+    public void submitFeedback(String subject, String body, RequestListener listener) {
         TicketCompat ticketCompat = new TicketCompat();
         ticketCompat.setCustomer(Constants.ZAMMAD_CUSTOMER);
         ticketCompat.setGroup("Users");
         ticketCompat.setTitle(subject);
-        List<ArticleAttachmentCompat> attachs = new ArrayList<>();
-        for (Image image: fileList) {
-            attachs.add(new ArticleAttachmentCompat(image.getFileName(), image.getData(), image.getMimeType()));
-        }
-        ticketCompat.setArticle(new TicketArticleCompat(subject, body, Constants.ARTICLE_TYPE, false, attachs.isEmpty()? null : attachs));
+        ticketCompat.setArticle(new TicketArticleCompat(subject, body, Constants.ARTICLE_TYPE, false, null));
         webServices.createTicket(getHeaderMap(), ticketCompat).enqueue(new Callback<Ticket>() {
             @Override
             public void onResponse(Call<Ticket> call, Response<Ticket> response) {
