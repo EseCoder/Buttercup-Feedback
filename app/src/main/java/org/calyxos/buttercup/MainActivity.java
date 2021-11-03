@@ -1,51 +1,24 @@
 package org.calyxos.buttercup;
 
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
-import android.media.projection.MediaProjectionManager;
 import android.os.Bundle;
-import android.os.IBinder;
-import android.os.Parcelable;
-import android.provider.Settings;
-import android.util.Log;
 import android.view.View;
-import android.widget.Toast;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import org.calyxos.buttercup.adapter.FileAdapter;
 import org.calyxos.buttercup.databinding.ActivityMainBinding;
 import org.calyxos.buttercup.dialog.AlertDialogFragment;
 import org.calyxos.buttercup.model.FeedbackViewModel;
-import org.calyxos.buttercup.model.Image;
 import org.calyxos.buttercup.network.RequestListener;
 import org.calyxos.buttercup.notification.FeedbackNotification;
 import org.calyxos.buttercup.notification.LogcatNotification;
-import org.calyxos.buttercup.service.PopupWindowService;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final String TAG = MainActivity.class.getSimpleName();
     private ActivityMainBinding binding;
     private FeedbackViewModel feedbackViewModel;
-    private FileAdapter adapter;
     private AlertDialogFragment dialog;
     private String message = "";
     private boolean resumeDialog = false;
-
-    private ServiceConnection serviceConnection;
-    private PopupWindowService popupService;
-
-    public static final String SUBJECT = "subject";
-    public static final String BODY = "body";
-    public static final String SCREENSHOTS = "screenshots";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,10 +26,7 @@ public class MainActivity extends AppCompatActivity {
         binding = ActivityMainBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        feedbackViewModel = FeedbackViewModel.getFeedbackViewModel();
-
-        adapter = new FileAdapter(this, feedbackViewModel);
-        binding.attachmentsList.setAdapter(adapter);
+        feedbackViewModel = new FeedbackViewModel();
 
         dialog = new AlertDialogFragment();
 
@@ -106,7 +76,6 @@ public class MainActivity extends AppCompatActivity {
                 binding.progressBar.setVisibility(View.GONE);
                 binding.subjectEdit.setText("");
                 binding.bodyEdit.setText("");
-                feedbackViewModel.clearFileList();
                 feedbackNotification.showOrUpdateNotification(true, getString(R.string.feedback_sent));
 
                 try {
@@ -213,103 +182,11 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         });
-
-        binding.takeScreenshotSwitch.setOnClickListener(v -> {
-            if (binding.takeScreenshotSwitch.isChecked()) {
-                // Is Draw over other apps permission granted?
-                if (!Settings.canDrawOverlays(this)) {
-                    binding.takeScreenshotSwitch.setChecked(false);
-                    //TODO add an explanation dialog here
-                    getDrawOverlaysPermission();
-                } else {
-                    getScreenCapturePermission();
-                }
-            } else stopPopupService();
-        });
-
-        if (savedInstanceState != null) {
-            String subject = savedInstanceState.getString(SUBJECT);
-            String body = savedInstanceState.getString(BODY);
-            binding.subjectEdit.setText(subject != null? subject : "");
-            binding.bodyEdit.setText(body != null? body : "");
-
-            //For security reasons we shouldn't write image to file hence saving and restoring when screen rotates is not
-            //supported. We might just set screen orientation to landscape permanently
-            //feedbackViewModel.restoreScreenshots(this, savedInstanceState);
-
-            savedInstanceState.clear();
-        }
-    }
-
-    private void startPopupService(int resultCode, Intent data) {
-        Intent serviceIntent = new Intent(MainActivity.this, PopupWindowService.class);
-        serviceIntent.putExtra(Constants.RESULT_CODE, resultCode);
-        serviceIntent.putExtra(Constants.PERMISSION_DATA, data);
-        //Service connection to bind the service to this context because of startForegroundService issues
-        serviceConnection = new ServiceConnection() {
-            @Override
-            public void onServiceConnected(ComponentName name, IBinder service) {
-                Log.d(TAG, "Service connected");
-                PopupWindowService.ServiceBinder binder = (PopupWindowService.ServiceBinder) service;
-                popupService = binder.getService();
-                startForegroundService(serviceIntent);
-                popupService.startForeground(Constants.SCREENSHOT_NOTIFICATION_ID, popupService.getNotification());
-                popupService.setViewModel(feedbackViewModel);
-            }
-
-            @Override
-            public void onBindingDied(ComponentName name) {
-                Log.w(TAG, "Binding has died.");
-            }
-
-            @Override
-            public void onNullBinding(ComponentName name) {
-                Log.w(TAG, "Binding was null.");
-            }
-
-            @Override
-            public void onServiceDisconnected(ComponentName name) {
-                Log.w(TAG, "Service is disconnected..");
-            }
-        };
-
-        try {
-            bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
-        } catch (RuntimeException re) {
-            re.printStackTrace();
-            //Use the normal way and accept it will fail sometimes
-            startForegroundService(serviceIntent);
-        }
-    }
-
-    private void stopPopupService() {
-        if (serviceConnection != null)
-            unbindService(serviceConnection);
-        if (popupService != null)
-            popupService.stopForeground(true);
-        stopService(new Intent(this, PopupWindowService.class));
-    }
-
-    private void getDrawOverlaysPermission() {
-        // send user to the device settings
-        Intent myIntent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION);
-        startActivity(myIntent);
-    }
-
-    private void getScreenCapturePermission() {
-        MediaProjectionManager projectionManager =
-                (MediaProjectionManager) getSystemService(Context.MEDIA_PROJECTION_SERVICE);
-        startActivityForResult(projectionManager.createScreenCaptureIntent(), Constants.SCREEN_CAPTURE_PERMISSION_CODE);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        feedbackViewModel.getScreenshots().observe(this, images -> {
-            adapter.addFileList(images);
-            adapter.notifyDataSetChanged();
-        });
-
         if (resumeDialog) {
             if (dialog == null)
                 dialog = new AlertDialogFragment();
@@ -322,40 +199,5 @@ public class MainActivity extends AppCompatActivity {
     private void showDialogOnResume(String message) {
         resumeDialog = true;
         this.message = message;
-    }
-
-    private void openFile() {
-        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.setType("image/*");
-
-        startActivityForResult(intent, Constants.PICK_IMAGE_REQUEST_CODE);
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        //feedbackViewModel.processResult(this, requestCode, resultCode, data);
-        if (requestCode == Constants.SCREEN_CAPTURE_PERMISSION_CODE) {
-            if (resultCode == RESULT_OK) {
-                // start a service
-                startPopupService(resultCode, data);
-            } else {
-                binding.takeScreenshotSwitch.setChecked(false);
-                Log.d(TAG, "User rejected permission for screen capture.");
-                Toast.makeText(this, getString(R.string.screen_capture_rejected), Toast.LENGTH_LONG).show();
-            }
-        }
-    }
-
-    @Override
-    protected void onSaveInstanceState(@NonNull Bundle outState) {
-        outState.putString(SUBJECT, binding.subjectEdit.getText().toString());
-        outState.putString(BODY, binding.bodyEdit.getText().toString());
-
-        //For security reasons we shouldn't write image to file hence saving and restoring when screen rotates is not
-        //supported. So we'll just set screen orientation to landscape permanently
-        //outState = feedbackViewModel.saveScreenshots(this, outState);
-        super.onSaveInstanceState(outState);
     }
 }
