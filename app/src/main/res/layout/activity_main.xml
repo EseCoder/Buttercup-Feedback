@@ -11,6 +11,7 @@
         android:layout_height="match_parent"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
+        android:scrollbars="none"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -19,13 +20,14 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:paddingBottom="100dp"
             android:orientation="vertical">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
                 android:fontFamily="@font/roboto_medium"
+                android:layout_marginTop="16dp"
                 android:text="@string/instructions" />
 
             <EditText
@@ -53,12 +55,49 @@
                 android:singleLine="false"
                 android:textSize="16sp" />
 
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/attachments_list"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp"
+                app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                tools:listitem="@layout/attachment_list_item"/>
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="20dp">
+
+                <TextView
+                    android:id="@+id/takeScreenshotText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@color/transparent_to_gray"
+                    android:text="@string/take_screenshot"
+                    android:textColor="@color/purple_700"
+                    android:textSize="18sp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@id/takeScreenshotSwitch"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/takeScreenshotSwitch"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/takeScreenshotText"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
             <Button
                 android:id="@+id/submit_btn"
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
                 android:layout_marginStart="8dp"
-                android:layout_marginTop="61dp"
+                android:layout_marginTop="40dp"
                 android:layout_marginEnd="8dp"
                 android:fontFamily="@font/roboto_medium"
                 android:text="@string/submit"
