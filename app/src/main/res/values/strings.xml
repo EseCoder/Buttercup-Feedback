@@ -1,0 +1,25 @@
+<resources>
+    <string name="app_name">Buttercup</string>
+    <string name="feedback">Feedback</string>
+    <string name="instructions">Supply feedback subject and message body below</string>
+    <string name="subject">Subject</string>
+    <string name="message">Message</string>
+    <string name="submit">Submit</string>
+    <string name="subject_body_empty">Please supply subject and body of the feedback message.</string>
+    <string name="feedback_sent">Feedback sent successfully.</string>
+    <string name="ok">OK</string>
+    <string name="internet_unavailable">Internet connection not available.</string>
+    <string name="logcat_btn_tooltip">Click to send logcat for analysis</string>
+    <string name="send_logcat">Send Logcat</string>
+    <string name="sending_logcat">Sending logcat…</string>
+    <string name="logcat_sent">Logcat sent.</string>
+    <string name="logcat_not_retrieved">Error. Logcat wasn\'t retrieved.</string>
+    <string name="logcat_notification_title">Logcat Upload</string>
+    <string name="logcat_notification_desc">Logcat upload in progress</string>
+    <string name="logcat_notification_channel_name">Buttercup Feedback Logcat Channel</string>
+    <string name="logcat_notification_channel_description">Notification channel for logcat upload progress</string>
+    <string name="feedback_notification_title">Feedback Upload</string>
+    <string name="feedback_notification_desc">Feedback upload in progress.</string>
+    <string name="feedback_notification_channel_name">Buttercup Feedback Feedback Channel</string>
+    <string name="feedback_notification_channel_description">Notification channel for feedback upload progress</string>
+</resources>
