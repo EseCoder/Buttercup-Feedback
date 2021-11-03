@@ -1,7 +1,6 @@
 package org.calyxos.buttercup;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -11,33 +10,46 @@ import android.provider.OpenableColumns;
 import android.util.Base64;
 import android.webkit.MimeTypeMap;
 
+import org.calyxos.buttercup.model.Image;
+
 import java.io.ByteArrayOutputStream;
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
 
 public class FileUtils {
 
-    public static SharedPreferences.Editor putInPreferenceFile(Context context) {
-        return context.getSharedPreferences(Constants.CRASH_REPORT_PREF, Context.MODE_PRIVATE).edit();
-    }
-
-    public static void putInPreferenceFile(Context context, List<String> reports) {
-       SharedPreferences.Editor editor = context.getSharedPreferences(Constants.CRASH_REPORT_PREF, Context.MODE_PRIVATE)
-               .edit();
-
-       reports.forEach(s -> {
-           editor.putString(Utils.getCurrentDateTime(), s).apply();
-       });
-    }
-
-    public static Map<String, ?> getPreferenceFileContents(Context context) {
-        return context.getSharedPreferences(Constants.CRASH_REPORT_PREF, Context.MODE_PRIVATE).getAll();
-    }
-
     public static String getBase64(byte[] data) {
         return Base64.encodeToString(data, Base64.DEFAULT);
+    }
+
+    public static Image getMetadata(Context context, Uri uri) throws IOException {
+        String name = "Screenshot";
+        String extension = "png";
+        String mimeType = "image/*";
+        int fileSize = 0;
+        Image image = new Image();
+
+        //check provider
+        if (uri.getScheme().equals("content")) {
+            String displayName = getContentSchemeDisplayName(context, uri);
+            name = displayName == null? name : displayName;
+
+        } else if (uri.getScheme().equals("file")) {
+            String displayName = getFileSchemeDisplayName(uri);
+            name = displayName == null? name : displayName;
+        }
+
+        extension = getFileExtension(context, uri);
+        mimeType = getMimeType(context, uri);
+        fileSize = getFileSize(context, uri);
+
+        byte[] dataBytes = getBytes(context, uri, extension);
+        image.setData(getBase64(dataBytes));
+        image.setFileName(name);
+        image.setMimeType(mimeType);
+        image.setFileSize(fileSize == 0? dataBytes.length : fileSize);
+
+        return image;
     }
 
     public static String getContentSchemeDisplayName(Context context, Uri uri) {
